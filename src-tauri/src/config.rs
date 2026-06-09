@@ -10,6 +10,15 @@ pub struct SearchBarAppearance {
     pub acrylic_tint: String,
 }
 
+impl Default for SearchBarAppearance {
+    fn default() -> Self {
+        Self {
+            acrylic_opacity: default_search_opacity(),
+            acrylic_tint: default_search_tint(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WheelAppearance {
     #[serde(default = "default_wheel_opacity")]
@@ -24,12 +33,36 @@ pub struct WheelAppearance {
     pub border_glow: u32,
 }
 
+impl Default for WheelAppearance {
+    fn default() -> Self {
+        Self {
+            acrylic_opacity: default_wheel_opacity(),
+            acrylic_tint: default_wheel_tint(),
+            border_color: default_border_color(),
+            border_width: default_border_width(),
+            border_glow: default_border_glow(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Appearance {
+    #[serde(default)]
     pub search_bar: SearchBarAppearance,
+    #[serde(default)]
     pub wheel: WheelAppearance,
     #[serde(default = "default_theme")]
     pub theme: String,
+}
+
+impl Default for Appearance {
+    fn default() -> Self {
+        Self {
+            search_bar: SearchBarAppearance::default(),
+            wheel: WheelAppearance::default(),
+            theme: default_theme(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,12 +73,30 @@ pub struct Hotkeys {
     pub wheel: String,
 }
 
+impl Default for Hotkeys {
+    fn default() -> Self {
+        Self {
+            search: default_search_hotkey(),
+            wheel: default_wheel_hotkey(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexConfig {
     #[serde(default = "default_index_paths")]
     pub paths: Vec<String>,
     #[serde(default = "default_exclude")]
     pub exclude: Vec<String>,
+}
+
+impl Default for IndexConfig {
+    fn default() -> Self {
+        Self {
+            paths: default_index_paths(),
+            exclude: default_exclude(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

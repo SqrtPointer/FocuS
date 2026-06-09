@@ -31,17 +31,13 @@ once_cell = "1"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [
-    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
     "Win32_Foundation",
-    "Win32_Graphics_Dwm",
-    "Win32_UI_Controls",
-    "Win32_System_Com",
-    "Win32_Graphics_Gdi",
 ] }
 
 [profile.release]
 panic = "abort"
 codegen-units = 1
 lto = true
-opt-level = "z"        # Optimize for size
+opt-level = "z"
 strip = true

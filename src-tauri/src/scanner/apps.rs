@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
-use std::path::PathBuf;
+use tauri::Manager;
 use crate::search::provider::{ItemAction, ItemType, SearchItem};
 
 /// A wheel sector configuration item
@@ -17,14 +17,20 @@ pub async fn scan_applications(app: &AppHandle) {
     let mut items = Vec::new();
 
     // Scan Start Menu shortcuts
-    let start_menu_dirs = vec![
-        dirs::data_dir().map(|d| d.join("Microsoft").join("Windows").join("Start Menu").join("Programs")),
-        PathBuf::from("C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs"),
-    ];
+    let start_menu_dirs: Vec<std::path::PathBuf> = vec![
+        dirs::data_dir()
+            .map(|d| d.join("Microsoft").join("Windows").join("Start Menu").join("Programs")),
+        Some(std::path::PathBuf::from(
+            "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs",
+        )),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
 
-    for dir in start_menu_dirs.into_iter().flatten() {
-        if let Ok(entries) = std::fs::read_dir(&dir) {
-            scan_directory(&dir, &mut items);
+    for dir in &start_menu_dirs {
+        if let Ok(_entries) = std::fs::read_dir(dir) {
+            scan_directory(dir, &mut items);
         }
     }
 
@@ -43,10 +49,7 @@ fn scan_directory(dir: &std::path::Path, items: &mut Vec<SearchItem>) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                // Recurse into subdirectories (max depth handled by read_dir recursion)
-                if path.read_dir().is_ok() {
-                    scan_directory(&path, items);
-                }
+                scan_directory(&path, items);
             } else if let Some(ext) = path.extension() {
                 if ext == "lnk" || ext == "exe" {
                     let title = path
@@ -76,6 +79,7 @@ pub mod commands {
     use tauri::{command, State};
     use crate::AppState;
     use crate::search::provider::SearchItem;
+    use tauri_plugin_shell::ShellExt;
 
     #[command]
     pub async fn get_apps(
@@ -87,10 +91,11 @@ pub mod commands {
 
     #[command]
     pub async fn launch_app(app: tauri::AppHandle, path: String) -> Result<(), String> {
-        tauri_plugin_shell::ShellExt::shell(&app)
+        app.shell()
             .command("cmd")
             .args(["/C", "start", "", &path])
             .output()
+            .await
             .map_err(|e| e.to_string())?;
         Ok(())
     }

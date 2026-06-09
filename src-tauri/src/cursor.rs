@@ -3,8 +3,9 @@
 pub fn get_cursor_pos() -> (i32, i32) {
     #[cfg(windows)]
     {
-        use windows::Win32::UI::Input::KeyboardAndMouse::GetCursorPos;
-        let mut point = windows::Win32::Foundation::POINT { x: 0, y: 0 };
+        use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
+        use windows::Win32::Foundation::POINT;
+        let mut point = POINT { x: 0, y: 0 };
         unsafe {
             let _ = GetCursorPos(&mut point);
         }
@@ -13,7 +14,6 @@ pub fn get_cursor_pos() -> (i32, i32) {
 
     #[cfg(not(windows))]
     {
-        // Fallback for non-Windows platforms
         (0, 0)
     }
 }

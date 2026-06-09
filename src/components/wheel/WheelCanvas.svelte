@@ -29,8 +29,8 @@
 
   let canvas: HTMLCanvasElement | undefined = $state();
   let ctx: CanvasRenderingContext2D | null = null;
-  const cx = width / 2;
-  const cy = height / 2;
+  let cx = $derived(width / 2);
+  let cy = $derived(height / 2);
 
   onMount(() => {
     if (canvas) {

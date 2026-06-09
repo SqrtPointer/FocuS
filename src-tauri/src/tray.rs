@@ -1,13 +1,11 @@
-use tauri::AppHandle;
+use tauri::Manager;
 
 pub fn create_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
     use tauri::menu::{MenuBuilder, MenuItemBuilder};
 
-    let settings = MenuItemBuilder::with_id("settings", "Settings")
-        .build(app)?;
-    let quit = MenuItemBuilder::with_id("quit", "Quit")
-        .build(app)?;
+    let settings = MenuItemBuilder::with_id("settings", "Settings").build(app)?;
+    let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
 
     let menu = MenuBuilder::new(app)
         .item(&settings)
@@ -38,7 +36,7 @@ pub fn create_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                 ..
             } = event
             {
-                // Toggle search window on tray click
+                // Toggle search window on tray click (future)
             }
         })
         .build(app)?;

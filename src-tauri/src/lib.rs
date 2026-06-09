@@ -10,7 +10,6 @@ mod window;
 
 use std::sync::Arc;
 use parking_lot::Mutex;
-use tauri::Manager;
 
 pub struct AppState {
     pub config: Arc<Mutex<config::Config>>,
@@ -50,23 +49,18 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            // Search commands
             search::commands::search,
             search::commands::get_recent,
-            // Window commands
             window::commands::show_search,
             window::commands::hide_search,
             window::commands::show_wheel,
             window::commands::hide_wheel,
             window::commands::show_settings,
-            // Config commands
             config::commands::get_config,
             config::commands::update_config,
             config::commands::update_wheel_layout,
-            // App commands
-            scanner::commands::get_apps,
-            scanner::commands::launch_app,
-            // Acrylic commands
+            scanner::apps::commands::get_apps,
+            scanner::apps::commands::launch_app,
             acrylic::commands::set_acrylic_opacity,
         ])
         .run(tauri::generate_context!())

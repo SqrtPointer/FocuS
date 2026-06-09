@@ -8,9 +8,7 @@ pub struct SearchEngine {
 
 impl SearchEngine {
     pub fn new() -> Self {
-        Self {
-            items: Vec::new(),
-        }
+        Self { items: Vec::new() }
     }
 
     /// Index searchable items
@@ -30,16 +28,16 @@ impl SearchEngine {
         }
 
         let mut matcher = Matcher::new(nucleo::Config::DEFAULT);
-        let query_utf32: Vec<char> = query.chars().collect();
-        let query_str = Utf32Str::new(&query_utf32, &mut Vec::new());
+        let mut buf = Vec::new();
+        let query_str = Utf32Str::new(query, &mut buf);
 
         let mut scored: Vec<(f64, usize)> = self
             .items
             .iter()
             .enumerate()
             .filter_map(|(i, item)| {
-                let haystack: Vec<char> = item.search_text.chars().collect();
-                let haystack_str = Utf32Str::new(&haystack, &mut Vec::new());
+                let mut buf = Vec::new();
+                let haystack_str = Utf32Str::new(&item.search_text, &mut buf);
                 matcher
                     .fuzzy_match(haystack_str, query_str)
                     .map(|score| (score as f64, i))

@@ -1,5 +1,3 @@
-use tauri::{AppHandle, Window};
-
 pub mod commands {
     use tauri::{command, AppHandle, Manager};
 
