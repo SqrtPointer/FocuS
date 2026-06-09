@@ -1,15 +1,11 @@
 use tauri::Manager;
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
 pub fn create_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-    use tauri::menu::{MenuBuilder, MenuItemBuilder};
-
-    let settings = MenuItemBuilder::with_id("settings", "Settings").build(app)?;
-    let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+    let quit = MenuItemBuilder::with_id("quit", "Exit").build(app)?;
 
     let menu = MenuBuilder::new(app)
-        .item(&settings)
-        .separator()
         .item(&quit)
         .build()?;
 
@@ -17,29 +13,28 @@ pub fn create_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .icon(app.default_window_icon().unwrap().clone())
         .tooltip("FocuS")
         .menu(&menu)
-        .on_menu_event(|app, event| match event.id().as_ref() {
-            "settings" => {
-                if let Some(window) = app.get_webview_window("settings") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
-            }
-            "quit" => {
+        .on_menu_event(|app, event| {
+            if event.id().as_ref() == "quit" {
                 app.exit(0);
             }
-            _ => {}
         })
-        .on_tray_icon_event(|_tray, event| {
+        .on_tray_icon_event(|tray_icon, event| {
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
                 button_state: MouseButtonState::Up,
                 ..
             } = event
             {
-                // Toggle search window on tray click (future)
+                // Left click → toggle search window
+                let app = tray_icon.app_handle();
+                if let Some(window) = app.get_webview_window("search") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
             }
         })
         .build(app)?;
 
+    log::info!("System tray created");
     Ok(())
 }
