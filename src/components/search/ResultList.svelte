@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import ResultItem from "./ResultItem.svelte";
   import type { SearchItem } from "../../lib/types";
 
-  export let results: SearchItem[] = [];
-  export let selectedIndex: number = 0;
-
-  const dispatch = createEventDispatcher<{ select: SearchItem }>();
+  let { results = [], selectedIndex = 0, onselect }: {
+    results: SearchItem[];
+    selectedIndex: number;
+    onselect?: (item: SearchItem) => void;
+  } = $props();
 </script>
 
 <div class="result-list">
@@ -17,7 +17,7 @@
       <button
         class="result-row"
         class:active={i === selectedIndex}
-        on:click={() => dispatch("select", item)}
+        onclick={() => onselect?.(item)}
       >
         <ResultItem {item} active={i === selectedIndex} />
       </button>
@@ -47,10 +47,6 @@
     text-align: left;
     cursor: pointer;
     padding: 0;
-  }
-
-  .result-row.active {
-    /* highlight passed down to ResultItem */
   }
 
   .result-list::-webkit-scrollbar {

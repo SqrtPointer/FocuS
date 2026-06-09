@@ -1,22 +1,22 @@
 <script lang="ts">
   import SearchInput from "./SearchInput.svelte";
   import ResultList from "./ResultList.svelte";
-  import { searchQuery, searchResults } from "../../lib/stores";
-  import { search, hideSearch, getRecent } from "../../lib/commands";
+  import { searchQuery } from "../../lib/stores";
+  import { search, hideSearch, getRecent, launchApp } from "../../lib/commands";
+  import type { SearchItem } from "../../lib/types";
 
-  let query = "";
-  let results: Awaited<ReturnType<typeof search>> = [];
-  let selectedIndex = 0;
+  let results: SearchItem[] = $state([]);
+  let selectedIndex = $state(0);
 
-  // Subscribe to query changes for search
-  $: {
-    query = $searchQuery;
+  // Search whenever query changes
+  $effect(() => {
+    const query = $searchQuery;
     if (query.length > 0) {
       search(query).then(r => results = r);
     } else {
       getRecent().then(r => results = r);
     }
-  }
+  });
 
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Escape") {
@@ -36,9 +36,9 @@
     }
   }
 
-  function executeItem(item: (typeof results)[0]) {
+  function executeItem(item: SearchItem) {
     if (item.action.type === "LaunchApp") {
-      import("../../lib/commands").then(m => m.launchApp(item.action.path));
+      launchApp(item.action.path);
     }
     hideSearch();
   }
@@ -48,13 +48,20 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="search-container" on:click|self={handleBlur}>
-  <div class="search-panel" role="dialog" aria-label="Search">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+  class="search-container"
+  role="dialog"
+  aria-label="Search"
+  tabindex="-1"
+  onclick={handleBlur}
+  onkeydown={(e: KeyboardEvent) => e.key === 'Escape' && hideSearch()}
+>
+  <div class="search-panel" onclick={(e: Event) => e.stopPropagation()} onkeydown={(e: Event) => e.stopPropagation()}>
     <SearchInput />
-    <ResultList {results} {selectedIndex} on:select={(e) => executeItem(e.detail)} />
+    <ResultList {results} {selectedIndex} onselect={(e: CustomEvent<SearchItem>) => executeItem(e.detail)} />
   </div>
 </div>
 

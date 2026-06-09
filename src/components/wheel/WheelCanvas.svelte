@@ -9,36 +9,46 @@
     DEAD_ZONE_RADIUS,
   } from "../../lib/wheel";
 
-  export let width: number = 400;
-  export let height: number = 400;
-  export let items: WheelItem[] = [];
-  export let activeSector: number | null = null;
-  export let borderColor: string = "#60CDFF";
-  export let borderWidth: number = 2;
-  export let borderGlow: number = 8;
+  let {
+    width = 400,
+    height = 400,
+    items = [],
+    activeSector = null,
+    borderColor = "#60CDFF",
+    borderWidth = 2,
+    borderGlow = 8,
+  }: {
+    width?: number;
+    height?: number;
+    items: WheelItem[];
+    activeSector: number | null;
+    borderColor?: string;
+    borderWidth?: number;
+    borderGlow?: number;
+  } = $props();
 
-  let canvas: HTMLCanvasElement;
+  let canvas: HTMLCanvasElement | undefined = $state();
   let ctx: CanvasRenderingContext2D | null = null;
-  let cx: number;
-  let cy: number;
-  let animFrame: number;
+  const cx = width / 2;
+  const cy = height / 2;
 
   onMount(() => {
-    ctx = canvas.getContext("2d");
-    cx = width / 2;
-    cy = height / 2;
-    render();
+    if (canvas) {
+      ctx = canvas.getContext("2d");
+      render();
+    }
   });
 
-  // Reactive render when activeSector changes
-  $: {
-    activeSector;
-    borderColor;
-    borderWidth;
-    borderGlow;
-    items;
+  // Reactive render when props change
+  $effect(() => {
+    // Access all reactive dependencies
+    void activeSector;
+    void borderColor;
+    void borderWidth;
+    void borderGlow;
+    void items;
     if (ctx) render();
-  }
+  });
 
   function render() {
     if (!ctx) return;
@@ -60,14 +70,12 @@
 
       const item = items.find(w => w.sector === i);
       if (item) {
-        // Icon
         c.font = "22px 'Segoe UI', sans-serif";
         c.textAlign = "center";
         c.textBaseline = "middle";
         c.fillStyle = "rgba(255,255,255,0.9)";
         c.fillText(item.icon, lx, ly - 12);
 
-        // Label
         c.font = "10px 'Segoe UI', sans-serif";
         c.fillStyle = "rgba(255,255,255,0.6)";
         c.fillText(item.title, lx, ly + 14);
@@ -86,7 +94,7 @@
   }
 </script>
 
-<canvas bind:this={canvas} {width} {height} />
+<canvas bind:this={canvas} {width} {height}></canvas>
 
 <style>
   canvas {

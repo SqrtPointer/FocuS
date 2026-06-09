@@ -2,7 +2,7 @@
   // Semi-transparent backdrop for the wheel
 </script>
 
-<div class="wheel-overlay" />
+<div class="wheel-overlay"></div>
 
 <style>
   .wheel-overlay {

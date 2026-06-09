@@ -1,15 +1,16 @@
 <script lang="ts">
   import { searchQuery } from "../../lib/stores";
 
-  let value = "";
+  let value = $state("");
 
   function handleInput(e: Event) {
-    value = (e.target as HTMLInputElement).value;
-    $searchQuery = value;
+    const target = e.target as HTMLInputElement;
+    value = target.value;
+    $searchQuery = target.value;
   }
 
   // Auto-focus on mount
-  let inputEl: HTMLInputElement;
+  let inputEl: HTMLInputElement | undefined = $state();
   $effect(() => {
     inputEl?.focus();
   });
@@ -22,7 +23,7 @@
     type="text"
     placeholder="Search apps, files, commands..."
     {value}
-    on:input={handleInput}
+    oninput={handleInput}
     spellcheck="false"
     autocomplete="off"
   />

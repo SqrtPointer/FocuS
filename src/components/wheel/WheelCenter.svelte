@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let text: string = "Release to cancel";
+  let { text = "Release to cancel" }: { text?: string } = $props();
 </script>
 
 <div class="wheel-center">

@@ -1,13 +1,14 @@
 <script lang="ts">
   import type { SearchItem } from "../../lib/types";
 
-  export let item: SearchItem;
-  export let active: boolean = false;
+  let { item, active = false }: { item: SearchItem; active?: boolean } = $props();
 
-  $: typeLabel = item.item_type === "Application" ? "App"
+  const typeLabel = $derived(
+    item.item_type === "Application" ? "App"
     : item.item_type === "File" ? "File"
     : item.item_type === "Folder" ? "Folder"
-    : "";
+    : ""
+  );
 </script>
 
 <div class="result-item" class:active>
