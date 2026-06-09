@@ -1,0 +1,245 @@
+# FocuS
+
+> Global Quick Search & App Launcher for Windows — 类似 uTools / macOS Spotlight 的快捷启动器
+
+[![Rust](https://img.shields.io/badge/rust-1.80+-orange.svg)](https://www.rust-lang.org)
+[![Tauri](https://img.shields.io/badge/tauri-v2-blue.svg)](https://v2.tauri.app)
+[![Svelte](https://img.shields.io/badge/svelte-5-ff3e00.svg)](https://svelte.dev)
+
+---
+
+## 概述
+
+FocuS 是一个高性能的 Windows 全局搜索与快速启动工具，提供两种互补的交互模式：
+
+| 模式 | 触发 | 用途 |
+|------|------|------|
+| **搜索栏** | `Alt + Space` | 类似 Spotlight，输入文字模糊搜索应用/文件 |
+| **超级面板（轮盘）** | 按住 `Ctrl + Space` | 类似 LoL 信号轮盘，鼠标拖拽方向快速选择 |
+
+采用 **Rust + Tauri v2** 构建，使用系统原生 WebView2（不打包浏览器），冷启动 < 100ms，内存占用 < 50MB。
+
+---
+
+## 为什么不用 Electron
+
+| | Electron | Tauri v2 |
+|------|----------|----------|
+| 二进制大小 | ~150MB+ | ~5MB |
+| 内存占用 | ~150MB+ | ~30MB |
+| 冷启动 | ~500ms | ~50ms |
+| 浏览器引擎 | 打包 Chromium | 系统原生 WebView2 |
+| 后端语言 | JS/TS | Rust (原生性能) |
+
+Tauri v2 使用 Windows 10+ 预装的 Edge WebView2，无需额外运行时依赖。
+
+---
+
+## 交互模式
+
+### 模式 ①: 搜索栏
+
+```
+┌─────────────────────────────────────┐
+│  🔍  │ 输入关键字搜索...            │
+├─────────────────────────────────────┤
+│  📦  VSCode        [应用程序]       │
+│  📄  README.md     [文件]           │
+│  ⚙️  设置          [系统]           │
+│  🧮  计算器        [工具]           │
+└─────────────────────────────────────┘
+```
+
+- `Alt + Space` 唤起，屏幕中央弹出
+- WinUI Acrylic 毛玻璃背景，可透见桌面
+- 输入文字 → 实时模糊搜索 → 回车启动
+- 失焦自动隐藏
+
+### 模式 ②: 超级面板 / 轮盘
+
+```
+              ╭══════════════╮
+            ╱    ▲  VS Code    ╲
+          ╱  ↖    ↑    ↗        ╲
+        ╱  文件    ●    浏览器    ╲
+       │   ←    (松开取消)  →     │
+        ╲  终端           记事本  ╱
+          ╲  ↙    ↓    ↘      ╱
+            ╲    ▼  计算器   ╱
+              ╰══════════════╯
+              ↑ 外圈发光边框
+```
+
+- 按住 `Ctrl + Space`，以鼠标光标位置为中心弹出
+- 8 方向扇区，拖拽鼠标选择
+- 松键执行，回中取消
+- 毛玻璃背景 + 可调透明度 + 可自定义外圈边框颜色
+
+---
+
+## 技术栈
+
+| 层 | 技术 | 说明 |
+|---|------|------|
+| 桌面壳 | Tauri v2 | 窗口管理、系统托盘、全局热键 |
+| 后端 | Rust | 搜索、索引、热键、毛玻璃、鼠标追踪 |
+| 前端 | Svelte 5 + TypeScript | 搜索栏 UI + Canvas 2D 轮盘渲染 |
+| 构建 | Vite | 前端打包 |
+| 毛玻璃 | `window-vibrancy` | 调用 Windows Acrylic API |
+| 模糊搜索 | `nucleo` | fzf 同款算法，支持 Unicode/拼音 |
+| 文件索引 | SQLite FTS5 | 全文搜索索引 |
+
+---
+
+## 架构
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                        FocuS                              │
+│                                                           │
+│  ┌──────────────┐       IPC         ┌──────────────────┐ │
+│  │   Frontend    │◄────────────────►│     Backend       │ │
+│  │   (WebView)   │   Tauri API      │     (Rust)        │ │
+│  │               │                  │                   │ │
+│  │ ① 搜索栏       │                  │ • 全局热键(多组)   │ │
+│  │ ② 超级面板     │                  │ • 搜索引擎         │ │
+│  │ ③ 设置面板     │                  │ • 应用扫描         │ │
+│  │               │                  │ • 文件索引         │ │
+│  │               │                  │ • Acrylic/毛玻璃   │ │
+│  │               │                  │ • 鼠标位置追踪     │ │
+│  └──────────────┘                  └──────────────────┘ │
+└──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 项目结构
+
+```
+FocuS/
+├── src-tauri/                  # Rust 后端
+│   ├── src/
+│   │   ├── main.rs             # 入口
+│   │   ├── hotkey.rs           # 全局热键注册/注销
+│   │   ├── window.rs           # 窗口创建/显示/隐藏/定位
+│   │   ├── acrylic.rs          # WinUI Acrylic/Mica 毛玻璃
+│   │   ├── cursor.rs           # 全局鼠标位置追踪
+│   │   ├── search/
+│   │   │   ├── engine.rs       # 模糊搜索核心 (nucleo)
+│   │   │   ├── matcher.rs      # 匹配器与评分
+│   │   │   └── provider.rs     # 搜索源 trait
+│   │   ├── scanner/
+│   │   │   ├── apps.rs         # 应用扫描
+│   │   │   └── files.rs        # 文件索引
+│   │   ├── plugins/
+│   │   │   ├── mod.rs
+│   │   │   └── runtime.rs      # WASM 插件运行时
+│   │   ├── config.rs           # 配置读取/写入
+│   │   └── tray.rs             # 系统托盘
+│   ├── Cargo.toml
+│   ├── tauri.conf.json
+│   ├── capabilities/
+│   └── icons/
+├── src/                        # 前端 — Svelte 5
+│   ├── index.html
+│   ├── main.ts
+│   ├── App.svelte
+│   ├── lib/
+│   │   ├── stores.ts           # 状态管理
+│   │   ├── commands.ts         # Tauri invoke 封装
+│   │   ├── types.ts
+│   │   └── wheel.ts            # 轮盘计算 + 渲染
+│   ├── components/
+│   │   ├── search/
+│   │   │   ├── SearchBar.svelte
+│   │   │   ├── SearchInput.svelte
+│   │   │   ├── ResultList.svelte
+│   │   │   └── ResultItem.svelte
+│   │   ├── wheel/
+│   │   │   ├── RadialWheel.svelte
+│   │   │   ├── WheelCanvas.svelte
+│   │   │   ├── WheelCenter.svelte
+│   │   │   └── WheelOverlay.svelte
+│   │   └── settings/
+│   │       ├── SettingsPanel.svelte
+│   │       ├── AppearanceSettings.svelte
+│   │       └── WheelEditor.svelte
+│   └── assets/styles/
+│       ├── global.css
+│       └── wheel.css
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+└── .gitignore
+```
+
+---
+
+## 关键依赖
+
+### Rust
+
+```toml
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-global-shortcut = "2"
+window-vibrancy = "0.5"             # WinUI Acrylic 毛玻璃
+nucleo = "0.5"                      # 模糊搜索
+rusqlite = { version = "0.31", features = ["bundled", "fts5"] }
+tokio = { version = "1", features = ["full"] }
+notify = "6"                        # 文件系统监听
+windows = { version = "0.58", features = [...] }  # 鼠标追踪 + DWM
+```
+
+### 前端
+
+- `svelte@^5` — UI 框架
+- `@tauri-apps/api@^2` — Tauri IPC 桥接
+- `vite@^6` — 构建工具
+- Canvas 2D — 轮盘渲染（零额外依赖）
+
+---
+
+## 快速开始
+
+### 前置条件
+
+1. [Rust](https://rustup.rs) 1.80+
+2. [Node.js](https://nodejs.org) 20+
+3. Windows 10+ (WebView2 已预装)
+
+### 开发
+
+```bash
+# 安装前端依赖
+npm install
+
+# 启动开发服务器 (热重载)
+npm run tauri dev
+
+# 构建 MSI 安装包
+npm run tauri build
+```
+
+---
+
+## 实现路线图
+
+- [x] **Phase 1**: 搜索栏 MVP — 全局热键 + 毛玻璃窗口 + 应用搜索
+- [ ] **Phase 2**: 超级面板/轮盘 — LoL 风格 8 扇区径向菜单
+- [ ] **Phase 3**: 文件搜索 — SQLite FTS5 全文索引
+- [ ] **Phase 4**: 外观定制 — 透明度/边框颜色/轮盘布局编辑器
+- [ ] **Phase 5**: 插件系统 — WASM 运行时 + 插件市场
+
+---
+
+## 设计参考
+
+- [uTools](https://u.tools) — 超级面板概念
+- [macOS Spotlight](https://support.apple.com/guide/mac-help/search-with-spotlight-mchlp1008/mac) — 搜索栏交互
+- [LoL Ping Wheel](https://leagueoflegends.fandom.com/wiki/Ping) — 轮盘菜单交互
+- [WinUI Acrylic](https://learn.microsoft.com/en-us/windows/apps/design/style/acrylic) — 毛玻璃材质
+
+## License
+
+MIT

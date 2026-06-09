@@ -1,0 +1,89 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicedoc/tauri-docs/v2/packages/api/src/tauri.conf.schema.json",
+  "productName": "FocuS",
+  "version": "0.1.0",
+  "identifier": "com.eason.focus",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "search",
+        "title": "FocuS Search",
+        "width": 680,
+        "height": 400,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "center": true,
+        "skipTaskbar": true,
+        "shadow": false
+      },
+      {
+        "label": "wheel",
+        "title": "FocuS Wheel",
+        "width": 400,
+        "height": 400,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "center": false,
+        "skipTaskbar": true,
+        "shadow": false
+      },
+      {
+        "label": "settings",
+        "title": "FocuS Settings",
+        "width": 600,
+        "height": 500,
+        "resizable": false,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "visible": false,
+        "center": true,
+        "skipTaskbar": false
+      }
+    ],
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true,
+      "tooltip": "FocuS"
+    },
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: https://asset.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "wix": {},
+      "nsis": {}
+    }
+  },
+  "plugins": {
+    "global-shortcut": {
+      "shortcuts": []
+    },
+    "shell": {
+      "open": true
+    }
+  }
+}
