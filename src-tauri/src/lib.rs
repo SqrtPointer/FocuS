@@ -19,7 +19,7 @@ pub struct AppState {
 }
 
 /// Ensure only one instance of the app runs.
-/// Uses a simple lock file. The file is cleaned up when the app exits normally.
+/// Uses a lock file with PID; cleans up stale locks from crashed instances.
 fn check_single_instance() -> bool {
     let lock_path = dirs::data_dir()
         .unwrap_or_default()
@@ -27,7 +27,37 @@ fn check_single_instance() -> bool {
         .join("instance.lock");
 
     if lock_path.exists() {
-        return false;
+        // Check if the PID in the lock file is still alive
+        if let Ok(content) = std::fs::read_to_string(&lock_path) {
+            if let Ok(pid) = content.trim().parse::<u32>() {
+                #[cfg(windows)]
+                {
+                    // Try to open the process — if we can't, it's stale
+                    use windows::Win32::System::Threading::{
+                        OpenProcess, GetExitCodeProcess,
+                        PROCESS_QUERY_LIMITED_INFORMATION,
+                    };
+                    use windows::Win32::Foundation::CloseHandle;
+                    unsafe {
+                        let h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+                        if let Ok(handle) = h {
+                            let mut exit_code = 0u32;
+                            let _ = GetExitCodeProcess(handle, &mut exit_code);
+                            let _ = CloseHandle(handle);
+                            // STILL_ACTIVE = 259
+                            if exit_code == 259 {
+                                log::info!("Another instance is running (PID {}), exiting.", pid);
+                                return false;
+                            }
+                        }
+                    }
+                }
+                // PID not alive — stale lock, remove it
+                let _ = std::fs::remove_file(&lock_path);
+            }
+        } else {
+            let _ = std::fs::remove_file(&lock_path);
+        }
     }
 
     if let Some(parent) = lock_path.parent() {
@@ -35,6 +65,14 @@ fn check_single_instance() -> bool {
     }
     let _ = std::fs::write(&lock_path, std::process::id().to_string());
     true
+}
+
+fn cleanup_lock_file() {
+    let lock_path = dirs::data_dir()
+        .unwrap_or_default()
+        .join("FocuS")
+        .join("instance.lock");
+    let _ = std::fs::remove_file(&lock_path);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -60,11 +98,13 @@ pub fn run() {
             log::info!("FocuS starting up...");
 
             // Initialize system tray
-            tray::create_tray(app)?;
+            tray::create_tray(app);
 
             // Register global hotkeys
             let handle = app.handle().clone();
-            hotkey::register_hotkeys(handle)?;
+            if let Err(e) = hotkey::register_hotkeys(handle) {
+                log::error!("Hotkey registration failed: {}", e);
+            }
 
             // Initialize app scanner (background)
             let handle = app.handle().clone();
@@ -110,6 +150,11 @@ pub fn run() {
             scanner::files::commands::search_files,
             acrylic::commands::set_acrylic_opacity,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running FocuS");
+        .build(tauri::generate_context!())
+        .expect("error while building FocuS")
+        .run(|_app_handle, event| {
+            if let tauri::RunEvent::Exit = event {
+                cleanup_lock_file();
+            }
+        });
 }
