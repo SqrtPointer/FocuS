@@ -20,6 +20,5 @@ Thumbs.db
 .env
 .env.local
 es.exe
-es.exe
 stderr.txt
 stdout.txt
