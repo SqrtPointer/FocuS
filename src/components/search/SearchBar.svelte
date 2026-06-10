@@ -43,25 +43,14 @@
     hideSearch();
   }
 
-  function handleBlur() {
-    hideSearch();
-  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-  class="search-container"
-  role="dialog"
-  aria-label="Search"
-  tabindex="-1"
-  onclick={handleBlur}
-  onkeydown={(e: KeyboardEvent) => e.key === 'Escape' && hideSearch()}
->
-  <div class="search-panel" onclick={(e: Event) => e.stopPropagation()} onkeydown={(e: Event) => e.stopPropagation()}>
+<div class="search-container" role="dialog" aria-label="Search">
+  <div class="search-panel">
     <SearchInput />
-    <ResultList {results} {selectedIndex} onselect={(e: CustomEvent<SearchItem>) => executeItem(e.detail)} />
+    <ResultList {results} {selectedIndex} onselect={(item: SearchItem) => executeItem(item)} />
   </div>
 </div>
 

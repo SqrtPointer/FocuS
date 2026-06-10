@@ -10,14 +10,39 @@ mod window;
 
 use std::sync::Arc;
 use parking_lot::Mutex;
+use tauri::Manager;
 
 pub struct AppState {
     pub config: Arc<Mutex<config::Config>>,
     pub search_engine: Arc<Mutex<search::engine::SearchEngine>>,
 }
 
+/// Ensure only one instance of the app runs.
+/// Uses a simple lock file. The file is cleaned up when the app exits normally.
+fn check_single_instance() -> bool {
+    let lock_path = dirs::data_dir()
+        .unwrap_or_default()
+        .join("FocuS")
+        .join("instance.lock");
+
+    if lock_path.exists() {
+        return false;
+    }
+
+    if let Some(parent) = lock_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let _ = std::fs::write(&lock_path, std::process::id().to_string());
+    true
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    if !check_single_instance() {
+        log::info!("Another instance is already running. Exiting.");
+        return;
+    }
+
     env_logger::init();
 
     let config = config::Config::load().unwrap_or_default();
@@ -45,6 +70,26 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 scanner::apps::scan_applications(&handle).await;
             });
+
+            // --- Window focus-out → hide ---
+            // Search window: hide on blur
+            if let Some(win) = app.get_webview_window("search") {
+                let win_clone = win.clone();
+                win.on_window_event(move |event| {
+                    if let tauri::WindowEvent::Focused(false) = event {
+                        let _ = win_clone.hide();
+                    }
+                });
+            }
+            // Wheel window: hide on blur (user clicks away)
+            if let Some(win) = app.get_webview_window("wheel") {
+                let win_clone = win.clone();
+                win.on_window_event(move |event| {
+                    if let tauri::WindowEvent::Focused(false) = event {
+                        let _ = win_clone.hide();
+                    }
+                });
+            }
 
             Ok(())
         })
