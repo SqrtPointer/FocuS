@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SearchItem } from "../../lib/types";
+  import { convertFileSrc } from "@tauri-apps/api/core";
 
   let { item, active = false }: { item: SearchItem; active?: boolean } = $props();
 
@@ -9,10 +10,17 @@
     : item.item_type === "Folder" ? "Folder"
     : ""
   );
+
+  const isIconPath = $derived(item.icon.endsWith(".png") || item.icon.includes("\\") || item.icon.includes("/"));
+  const iconSrc = $derived(isIconPath ? convertFileSrc(item.icon) : null);
 </script>
 
 <div class="result-item" class:active>
-  <span class="item-icon">{item.icon}</span>
+  {#if iconSrc}
+    <img class="item-icon-img" src={iconSrc} alt="" />
+  {:else}
+    <span class="item-icon">{item.icon}</span>
+  {/if}
   <div class="item-info">
     <span class="item-title">{item.title}</span>
     <span class="item-subtitle">{item.subtitle}</span>
@@ -38,6 +46,13 @@
   .item-icon {
     font-size: 20px;
     flex-shrink: 0;
+  }
+
+  .item-icon-img {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    object-fit: contain;
   }
 
   .item-info {

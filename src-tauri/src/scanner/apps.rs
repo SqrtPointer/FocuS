@@ -59,11 +59,15 @@ fn scan_directory(dir: &std::path::Path, items: &mut Vec<SearchItem>) {
                         .to_string();
                     let app_path = path.to_string_lossy().to_string();
 
+                    // Try to extract the real icon
+                    let icon = crate::icons::extract_and_cache(&app_path, &title)
+                        .unwrap_or_else(|| "📦".to_string());
+
                     items.push(SearchItem {
                         id: format!("app:{}", title),
                         title: title.clone(),
                         subtitle: app_path.clone(),
-                        icon: "📦".to_string(),
+                        icon,
                         item_type: ItemType::Application,
                         search_text: title,
                         action: ItemAction::LaunchApp { path: app_path },

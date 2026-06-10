@@ -60,7 +60,7 @@
       "tooltip": "FocuS"
     },
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: https://asset.localhost"
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: https://asset.localhost tauri://localhost"
     }
   },
   "bundle": {

@@ -2,6 +2,7 @@ mod acrylic;
 mod config;
 mod cursor;
 mod hotkey;
+mod icons;
 mod plugins;
 mod scanner;
 mod search;
