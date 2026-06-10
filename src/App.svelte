@@ -1,17 +1,20 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
   import SearchBar from "./components/search/SearchBar.svelte";
   import RadialWheel from "./components/wheel/RadialWheel.svelte";
   import SettingsPanel from "./components/settings/SettingsPanel.svelte";
-  import { currentView } from "./lib/stores";
 
-  // Determine which view to show based on the Tauri window label
-  function getWindowLabel(): string {
-    // The window label is available via Tauri API at runtime
-    // Default to search for now
-    return "search";
-  }
+  let view = $state("search");
 
-  $: view = $currentView || getWindowLabel();
+  onMount(async () => {
+    try {
+      const win = getCurrentWindow();
+      view = win.label; // "search", "wheel", or "settings"
+    } catch {
+      view = "search";
+    }
+  });
 </script>
 
 {#if view === "search"}
