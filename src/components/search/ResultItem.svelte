@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { SearchItem } from "../../lib/types";
-  import { convertFileSrc } from "@tauri-apps/api/core";
 
   let { item, active = false }: { item: SearchItem; active?: boolean } = $props();
 
@@ -11,13 +10,12 @@
     : ""
   );
 
-  const isIconPath = $derived(item.icon.endsWith(".png") || item.icon.includes("\\") || item.icon.includes("/"));
-  const iconSrc = $derived(isIconPath ? convertFileSrc(item.icon) : null);
+  const isImage = $derived(item.icon.startsWith("data:image/"));
 </script>
 
 <div class="result-item" class:active>
-  {#if iconSrc}
-    <img class="item-icon-img" src={iconSrc} alt="" />
+  {#if isImage}
+    <img class="item-icon-img" src={item.icon} alt="" />
   {:else}
     <span class="item-icon">{item.icon}</span>
   {/if}

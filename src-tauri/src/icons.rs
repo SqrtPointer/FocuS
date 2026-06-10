@@ -13,18 +13,53 @@ pub fn extract_and_cache(file_path: &str, app_name: &str) -> Option<String> {
     let _ = std::fs::create_dir_all(&cache_dir);
     let icon_path = cache_dir.join(sanitize(app_name) + ".png");
 
+    // Return cached icon as base64 data URL
     if icon_path.exists() {
-        return Some(icon_path.to_string_lossy().to_string());
+        return png_to_data_url(&icon_path);
     }
 
     #[cfg(windows)]
     {
         extract_windows(file_path, &icon_path)?;
-        Some(icon_path.to_string_lossy().to_string())
+        png_to_data_url(&icon_path)
     }
 
     #[cfg(not(windows))]
     None
+}
+
+/// Read a PNG file and return as `data:image/png;base64,...`
+fn png_to_data_url(path: &PathBuf) -> Option<String> {
+    use std::io::Read;
+    let mut f = std::fs::File::open(path).ok()?;
+    let mut buf = Vec::new();
+    f.read_to_end(&mut buf).ok()?;
+    let b64 = base64_encode(&buf);
+    Some(format!("data:image/png;base64,{}", b64))
+}
+
+fn base64_encode(data: &[u8]) -> String {
+    const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity((data.len() + 2) / 3 * 4);
+    for chunk in data.chunks(3) {
+        let b0 = chunk[0] as u32;
+        let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
+        let b2 = chunk.get(2).copied().unwrap_or(0) as u32;
+        let triple = (b0 << 16) | (b1 << 8) | b2;
+        out.push(CHARS[((triple >> 18) & 0x3F) as usize] as char);
+        out.push(CHARS[((triple >> 12) & 0x3F) as usize] as char);
+        if chunk.len() > 1 {
+            out.push(CHARS[((triple >> 6) & 0x3F) as usize] as char);
+        } else {
+            out.push('=');
+        }
+        if chunk.len() > 2 {
+            out.push(CHARS[(triple & 0x3F) as usize] as char);
+        } else {
+            out.push('=');
+        }
+    }
+    out
 }
 
 #[cfg(windows)]
