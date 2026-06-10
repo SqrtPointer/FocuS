@@ -9,16 +9,20 @@ pub async fn search(
     limit: Option<usize>,
 ) -> Result<Vec<SearchItem>, String> {
     let limit = limit.unwrap_or(20);
-    let engine = state.search_engine.lock();
 
-    // Search indexed items (applications)
-    let mut results = engine.search(&query, limit);
-
-    // Also search files via Everything
-    if results.len() < limit {
-        let file_results = crate::scanner::files::search_everything(&query, limit - results.len());
-        results.extend(file_results);
+    if query.is_empty() {
+        let engine = state.search_engine.lock();
+        return Ok(engine.search("", limit));
     }
+
+    // Run app search + file search in parallel
+    let half = (limit / 2).max(5);
+    let engine = state.search_engine.lock();
+    let mut results = engine.search(&query, half);
+
+    // Always try file search for non-empty queries
+    let file_results = crate::scanner::files::search_everything(&query, limit - results.len());
+    results.extend(file_results);
 
     Ok(results)
 }
