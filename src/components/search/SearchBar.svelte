@@ -3,6 +3,7 @@
   import ResultList from "./ResultList.svelte";
   import { searchQuery } from "../../lib/stores";
   import { search, hideSearch, getRecent, launchApp } from "../../lib/commands";
+  import { open } from "@tauri-apps/plugin-shell";
   import type { SearchItem } from "../../lib/types";
 
   let results: SearchItem[] = $state([]);
@@ -37,8 +38,11 @@
   }
 
   function executeItem(item: SearchItem) {
-    if (item.action.type === "LaunchApp") {
-      launchApp(item.action.path);
+    const action = item.action;
+    if (action.type === "LaunchApp") {
+      launchApp(action.path);
+    } else if (action.type === "OpenFile" || action.type === "OpenFolder") {
+      open(action.path);
     }
     hideSearch();
   }

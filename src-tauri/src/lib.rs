@@ -107,6 +107,7 @@ pub fn run() {
             config::commands::update_wheel_layout,
             scanner::apps::commands::get_apps,
             scanner::apps::commands::launch_app,
+            scanner::files::commands::search_files,
             acrylic::commands::set_acrylic_opacity,
         ])
         .run(tauri::generate_context!())
